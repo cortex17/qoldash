@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bell, CheckCheck, Package, MessageCircle, Info } from 'lucide-react'
 import { notificationsApi } from '../api/notifications'
+import { useUserStore } from '../store/userStore'
 import type { Notification } from '../api/types'
 
 function timeAgo(iso: string) {
@@ -19,6 +20,7 @@ function NotifIcon({ type }: { type: string }) {
 }
 
 export default function NotificationBell() {
+  const user         = useUserStore(s => s.user)
   const [open, setOpen]           = useState(false)
   const [items, setItems]         = useState<Notification[]>([])
   const [unread, setUnread]       = useState(0)
@@ -27,6 +29,7 @@ export default function NotificationBell() {
   const navigate     = useNavigate()
 
   const fetchUnread = async () => {
+    if (!localStorage.getItem('token')) return
     try {
       const { count } = await notificationsApi.getUnreadCount()
       setUnread(count)
@@ -34,10 +37,11 @@ export default function NotificationBell() {
   }
 
   useEffect(() => {
+    if (!user) return
     fetchUnread()
     const interval = setInterval(fetchUnread, 15_000)
     return () => clearInterval(interval)
-  }, [])
+  }, [user])
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
