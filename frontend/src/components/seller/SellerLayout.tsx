@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, Navigate, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Package, ShoppingCart,
-  Users, Bot, Settings, Bell, LogOut, Warehouse, MessageSquare, Menu,
+  Users, Bot, Settings, LogOut, Warehouse, MessageSquare, Menu,
 } from 'lucide-react'
 import { useUserStore } from '../../store/userStore'
 import { messagesApi } from '../../api/messages'
+import NotificationBell from '../NotificationBell'
 
 export default function SellerLayout() {
   const { user, logout } = useUserStore()
@@ -135,9 +136,9 @@ export default function SellerLayout() {
             <span className="text-sm font-medium text-gray-400">QOLDA</span>
           </div>
           <div className="flex items-center gap-3">
-            <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors relative">
-              <Bell size={18} />
-            </button>
+            <div className="text-gray-500">
+              <NotificationBell />
+            </div>
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-full bg-[#004B57] flex items-center justify-center text-white text-xs font-bold">
                 {initials}

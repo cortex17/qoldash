@@ -8,6 +8,7 @@ import { useThemeStore } from '../store/themeStore'
 import { useLangStore, type Lang } from '../store/langStore'
 import { useLocationStore } from '../store/locationStore'
 import { useT } from '../utils/i18n'
+import NotificationBell from './NotificationBell'
 
 const LANGS: { code: Lang; label: string; flag: string; img: string }[] = [
   { code: 'ru', label: 'РУ',  flag: '🇷🇺', img: 'https://flagcdn.com/w40/ru.png' },
@@ -193,6 +194,9 @@ export default function Header() {
             )}
             <span className="hidden lg:inline text-sm font-medium">{t('cart')}</span>
           </Link>
+
+          {/* Notifications — only for logged in users */}
+          {user && <NotificationBell />}
 
           {/* User — desktop */}
           {user ? (
