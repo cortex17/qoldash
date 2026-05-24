@@ -13,7 +13,7 @@ import httpx
 
 from database import engine, SessionLocal, Base, migrate_db
 import models  # noqa: F401 — registers all tables
-from routers import auth, products, recommendations, orders, reviews, admin, seller, ai, delivery, messages
+from routers import auth, products, recommendations, orders, reviews, admin, seller, ai, delivery, messages, wishlist, cart, notifications, promo
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -85,6 +85,10 @@ app.include_router(seller.router, prefix="/api/seller", tags=["seller"])
 app.include_router(ai.router, prefix="/api/ai", tags=["ai"])
 app.include_router(delivery.router, prefix="/api/delivery-services", tags=["delivery"])
 app.include_router(messages.router, prefix="/api/messages", tags=["messages"])
+app.include_router(wishlist.router, prefix="/api/wishlist", tags=["wishlist"])
+app.include_router(cart.router, prefix="/api/cart", tags=["cart"])
+app.include_router(notifications.router, prefix="/api/notifications", tags=["notifications"])
+app.include_router(promo.router, prefix="/api/promo", tags=["promo"])
 
 
 @app.get("/")

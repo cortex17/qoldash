@@ -17,7 +17,7 @@ export const productsApi = {
   create: (data: ProductCreate) =>
     client.post<Product>('/products', data).then(r => r.data),
 
-  update: (id: number, data: ProductUpdate) =>
+  update: (id: number, data: ProductUpdate | Partial<ProductCreate>) =>
     client.put<Product>(`/products/${id}`, data).then(r => r.data),
 
   delete: (id: number) =>
@@ -25,9 +25,6 @@ export const productsApi = {
 
   getMine: (page = 1) =>
     client.get<ProductList>('/products/mine', { params: { page, limit: 50 } }).then(r => r.data),
-
-  update: (id: number, data: Partial<ProductCreate>) =>
-    client.put<Product>(`/products/${id}`, data).then(r => r.data),
 
   updateStock: (id: number, stock: number) =>
     client.patch<Product>(`/products/${id}/stock`, { stock }).then(r => r.data),
@@ -37,7 +34,4 @@ export const productsApi = {
 
   recentlyViewed: (limit = 8) =>
     client.get<Product[]>('/products/recently-viewed', { params: { limit } }).then(r => r.data),
-
-  updateStock: (id: number, stock: number) =>
-    client.patch<Product>(`/products/${id}/stock`, { stock }).then(r => r.data),
 }
