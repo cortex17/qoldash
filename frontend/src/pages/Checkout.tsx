@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Truck, Clock, CheckCircle2, Smartphone, Banknote, CreditCard, ShieldCheck } from 'lucide-react'
+import { Truck, Clock, CheckCircle2, Smartphone, Banknote, CreditCard, ShieldCheck, LocateFixed, Loader2 } from 'lucide-react'
 import { toast } from '../store/toastStore'
 import { useCartStore } from '../store/cartStore'
 import { useUserStore } from '../store/userStore'
@@ -210,6 +210,7 @@ export default function Checkout() {
 
   const [suggestions, setSuggestions]       = useState<string[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [geoLoading, setGeoLoading]         = useState(false)
   const addressRef    = useRef<HTMLDivElement>(null)
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -221,6 +222,50 @@ export default function Checkout() {
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
+
+  const detectLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Геолокация не поддерживается браузером')
+      return
+    }
+    setGeoLoading(true)
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        try {
+          const { latitude: lat, longitude: lon } = coords
+          // Reverse geocode via Nominatim (бесплатно, без ключа)
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=ru`,
+            { headers: { 'Accept-Language': 'ru' } }
+          )
+          const data = await res.json()
+          const addr = data.address || {}
+          const parts = [
+            addr.city || addr.town || addr.village || '',
+            addr.road || addr.pedestrian || addr.suburb || '',
+            addr.house_number ? `${addr.house_number}` : '',
+          ].filter(Boolean)
+          const formatted = parts.join(', ')
+          if (formatted) {
+            setAddress(formatted)
+            toast.success('Адрес определён!')
+          } else {
+            toast.error('Не удалось определить адрес')
+          }
+        } catch {
+          toast.error('Ошибка при определении адреса')
+        } finally {
+          setGeoLoading(false)
+        }
+      },
+      (err) => {
+        setGeoLoading(false)
+        if (err.code === 1) toast.error('Разрешите доступ к геолокации')
+        else toast.error('Не удалось получить местоположение')
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    )
+  }
 
   const handleAddressChange = (value: string) => {
     setAddress(value)
@@ -356,9 +401,22 @@ export default function Checkout() {
 
             {/* Address */}
             <div className="card p-6">
-              <h3 className="font-bold text-gray-800 dark:text-white mb-3">
-                Адрес доставки <span className="text-red-500">*</span>
-              </h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-bold text-gray-800 dark:text-white">
+                  Адрес доставки <span className="text-red-500">*</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={detectLocation}
+                  disabled={geoLoading}
+                  className="flex items-center gap-1.5 text-xs font-medium text-[#004B57] hover:text-[#003840] bg-[#004B57]/8 hover:bg-[#004B57]/15 px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
+                >
+                  {geoLoading
+                    ? <><Loader2 size={13} className="animate-spin" /> Определяю...</>
+                    : <><LocateFixed size={13} /> Моё местоположение</>
+                  }
+                </button>
+              </div>
               <div ref={addressRef} className="relative">
                 <input
                   required
@@ -381,6 +439,11 @@ export default function Checkout() {
                       </li>
                     ))}
                   </ul>
+                )}
+                {address && (
+                  <p className="text-xs text-gray-400 mt-1.5 pl-1">
+                    💡 Начните вводить улицу — появятся подсказки
+                  </p>
                 )}
               </div>
             </div>
