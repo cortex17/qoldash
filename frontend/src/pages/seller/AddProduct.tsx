@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Package, Tag, ArrowLeft, Sparkles } from 'lucide-react'
+import { Package, Tag, ArrowLeft, Sparkles, ImageOff, Loader2, CheckCircle2 } from 'lucide-react'
 import { productsApi } from '../../api/products'
 
 const CATEGORIES = ['Electronics', 'Clothing', 'Books', 'Home', 'Sports']
@@ -62,6 +62,19 @@ export default function AddProduct() {
   const discountPct = form.price && form.discount_price
     ? Math.round((1 - parseFloat(form.discount_price) / parseFloat(form.price)) * 100)
     : null
+
+  // Image preview with debounce
+  const [previewUrl, setPreviewUrl]       = useState('')
+  const [imgStatus, setImgStatus]         = useState<'idle' | 'loading' | 'ok' | 'error'>('idle')
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    const url = form.image_url.trim()
+    if (!url) { setPreviewUrl(''); setImgStatus('idle'); return }
+    setImgStatus('loading')
+    debounceRef.current = setTimeout(() => setPreviewUrl(url), 600)
+  }, [form.image_url])
 
   return (
     <div className="max-w-2xl">
@@ -212,21 +225,45 @@ export default function AddProduct() {
           </div>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-2">
                 Ссылка на фото
+                {imgStatus === 'ok'    && <span className="flex items-center gap-1 text-xs text-green-600 font-medium"><CheckCircle2 size={12}/> Фото загружено</span>}
+                {imgStatus === 'error' && <span className="text-xs text-red-500 font-medium">⚠ Не удалось загрузить</span>}
               </label>
               <input
-                type="url"
                 className="input"
                 value={form.image_url}
                 onChange={e => set('image_url', e.target.value)}
                 placeholder="https://example.com/image.jpg"
               />
-              {form.image_url && (
-                <div className="mt-2 w-20 h-20 rounded-xl overflow-hidden bg-gray-100 border border-gray-200">
-                  <img src={form.image_url} alt="preview" className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+              <p className="text-xs text-gray-400 mt-1">Вставьте прямую ссылку на изображение (.jpg, .png, .webp)</p>
+
+              {/* Preview */}
+              <div className={`mt-3 transition-all ${form.image_url ? 'block' : 'hidden'}`}>
+                <div className="relative w-full h-48 rounded-xl overflow-hidden border-2 border-dashed border-gray-200 bg-gray-50 flex items-center justify-center">
+                  {imgStatus === 'loading' && (
+                    <div className="flex flex-col items-center gap-2 text-gray-400">
+                      <Loader2 size={24} className="animate-spin" />
+                      <span className="text-xs">Загрузка превью...</span>
+                    </div>
+                  )}
+                  {imgStatus === 'error' && (
+                    <div className="flex flex-col items-center gap-2 text-gray-400">
+                      <ImageOff size={28} />
+                      <span className="text-xs text-center px-4">Не удалось загрузить изображение.<br/>Проверьте ссылку.</span>
+                    </div>
+                  )}
+                  {previewUrl && (
+                    <img
+                      src={previewUrl}
+                      alt="preview"
+                      className={`w-full h-full object-contain transition-opacity ${imgStatus === 'ok' ? 'opacity-100' : 'opacity-0 absolute'}`}
+                      onLoad={() => setImgStatus('ok')}
+                      onError={() => setImgStatus('error')}
+                    />
+                  )}
                 </div>
-              )}
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
