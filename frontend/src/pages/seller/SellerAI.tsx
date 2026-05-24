@@ -1,6 +1,19 @@
 import { useState, useRef, useEffect } from 'react'
-import { Bot, Sparkles, TrendingUp, FileText, Send, Copy, Check, MessageSquare } from 'lucide-react'
+import { Bot, Sparkles, TrendingUp, FileText, Send, Copy, Check, MessageSquare, ChevronDown } from 'lucide-react'
 import { aiApi } from '../../api/ai'
+
+const CATEGORIES = [
+  { value: 'Electronics',  label: '📱 Электроника' },
+  { value: 'Clothing',     label: '👕 Одежда и обувь' },
+  { value: 'Books',        label: '📚 Книги' },
+  { value: 'Home',         label: '🏠 Дом и интерьер' },
+  { value: 'Sports',       label: '⚽ Спорт и отдых' },
+  { value: 'Beauty',       label: '💄 Красота и здоровье' },
+  { value: 'Toys',         label: '🧸 Детские товары' },
+  { value: 'Food',         label: '🍎 Продукты питания' },
+  { value: 'Auto',         label: '🚗 Авто и мото' },
+  { value: 'Garden',       label: '🌱 Сад и огород' },
+]
 
 type Tab = 'description' | 'chat'
 
@@ -39,7 +52,17 @@ export default function SellerAI() {
 
   const [productName, setProductName] = useState('')
   const [category, setCategory]       = useState('')
+  const [catOpen, setCatOpen]         = useState(false)
   const [details, setDetails]         = useState('')
+  const catRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (catRef.current && !catRef.current.contains(e.target as Node)) setCatOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
   const [description, setDescription] = useState('')
   const [descLoading, setDescLoading] = useState(false)
   const [descError, setDescError]     = useState('')
@@ -161,12 +184,46 @@ export default function SellerAI() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Категория</label>
-                <input
-                  value={category}
-                  onChange={e => setCategory(e.target.value)}
-                  placeholder="Электроника, одежда..."
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#004B57]/30"
-                />
+                <div ref={catRef} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setCatOpen(o => !o)}
+                    className="w-full flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#004B57]/30 bg-white hover:border-gray-300 transition-colors"
+                  >
+                    <span className={category ? 'text-gray-900' : 'text-gray-400'}>
+                      {CATEGORIES.find(c => c.value === category)?.label ?? 'Выберите категорию...'}
+                    </span>
+                    <ChevronDown size={14} className={`text-gray-400 transition-transform ${catOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {catOpen && (
+                    <ul className="absolute z-30 w-full bg-white border border-gray-200 rounded-xl shadow-lg mt-1 py-1 max-h-60 overflow-y-auto">
+                      <li>
+                        <button
+                          type="button"
+                          onClick={() => { setCategory(''); setCatOpen(false) }}
+                          className="w-full text-left px-3 py-2 text-sm text-gray-400 hover:bg-gray-50 transition-colors"
+                        >
+                          — Не указывать
+                        </button>
+                      </li>
+                      {CATEGORIES.map(cat => (
+                        <li key={cat.value}>
+                          <button
+                            type="button"
+                            onClick={() => { setCategory(cat.value); setCatOpen(false) }}
+                            className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-[#004B57]/5 ${
+                              category === cat.value
+                                ? 'text-[#004B57] font-semibold bg-[#004B57]/5'
+                                : 'text-gray-700'
+                            }`}
+                          >
+                            {cat.label}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Характеристики</label>
